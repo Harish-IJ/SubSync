@@ -1,1 +1,2 @@
-"# SubSync" 
+# 💵 SubSync 🔃
+A SUBscription SYNCing application
