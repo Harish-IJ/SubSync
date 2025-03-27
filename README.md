@@ -1,2 +1,2 @@
 # 💵 SubSync 🔃
-A SUBscription SYNCing application
+A Subscription Syncing application
