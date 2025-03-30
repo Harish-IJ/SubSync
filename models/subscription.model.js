@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const subcscriptionSchema = new mongoose.Schema(
+const subscriptionSchema = new mongoose.Schema(
   {
     name: {
       type: String,
@@ -22,6 +22,7 @@ const subcscriptionSchema = new mongoose.Schema(
     frequency: {
       type: String,
       enum: ["daily", "weekly", "monthly", "yearly", "quarterly", "half-yearly"],
+      required: [true, "Subscription frequency is required"],
     },
     category: {
       type: String,
@@ -34,7 +35,7 @@ const subcscriptionSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      requirefd: [true, "Subscription status is required"],
+      required: [true, "Subscription status is required"],
       enum: ["active", "cancelled", "paused", "expired"],
       default: "active",
     },
@@ -47,8 +48,7 @@ const subcscriptionSchema = new mongoose.Schema(
       },
     },
     renewalDate: {
-      type: "Date",
-      required: [true, "Subscription renewal date is required"],
+      type: Date,
       validate: {
         validator: function (value) {
           return value > this.startDate;
@@ -66,18 +66,25 @@ const subcscriptionSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+const renewalPeriods = {
+  daily: 1,
+  weekly: 7,
+  monthly: 30,
+  quarterly: 90,
+  "half-yearly": 182,
+  yearly: 365,
+};
+
 // BEFORE SAVE
-subcscriptionSchema.pre("save", function (next) {
+subscriptionSchema.pre("save", function (next) {
   if (!this.renewalDate) {
-    const renewalPeriods = {
-      daily: 1,
-      weekly: 7,
-      monthly: 30,
-      yearly: 365,
-    };
+    const period = renewalPeriods[this.frequency];
+    if (!period) {
+      return next(new Error("Invalid frequency for renewal calculation"));
+    }
 
     this.renewalDate = new Date(this.startDate);
-    this.renewalDate.setDate(this.renewalDate.getDate() + renewalPeriods[this.frequency]);
+    this.renewalDate.setDate(this.renewalDate.getDate() + period);
 
     if (this.renewalDate < new Date()) {
       this.status = "expired";
@@ -87,6 +94,6 @@ subcscriptionSchema.pre("save", function (next) {
   next();
 });
 
-const Subscription = mongoose.model("Subscription", subcscriptionSchema);
+const Subscription = mongoose.model("Subscription", subscriptionSchema);
 
 export default Subscription;
